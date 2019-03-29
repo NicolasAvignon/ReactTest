@@ -9,6 +9,7 @@ import Select from '@material-ui/core/Select';
 import Chip from '@material-ui/core/Chip';
 import EquipmentCard from './EquipmentCard/EquipmentCard';
 import { styles } from './FilteredEquipmentList.style';
+import Scrollbar from 'react-scrollbars-custom';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -30,24 +31,50 @@ function getStyles(name, that) {
   };
 }
 
-function getNames(domains) {
-  let names = [];
-  domains.forEach(name => {
-    names.push(name.info);
+function getDomains(domainsSent) {
+  let domaines = [];
+  domainsSent.forEach(domain => {
+    domaines.push(domain);
   });
-  return names;
+  return domaines;
 }
 
 class FilteredEquipmentList extends React.Component {
 
     state = {
-      name: []
+      name: [],
+      offset: 0,
+      limit: 21
     };
 
-    handleChange = event => {
+    componentDidMount() {
+      this.scrollBar.scrollToTop();
+    }
+
+  handleChange = event => {
       this.setState({
         name: event.target.value
       });
+    };
+
+    loadData = (scrollValues) => {
+      // si on est en bas de la page
+      const bottom = scrollValues.scrollHeight - scrollValues.scrollTop <= (scrollValues.clientHeight);
+      if(bottom) {
+        this.setState((state) => ({
+          limit: state.limit + 21,
+        }));
+      }
+    };
+
+    getLabel = (domaines, value) => {
+      let label = '';
+      domaines.forEach((dom) => {
+        if(dom.info === value) {
+          label = dom.nom;
+        }
+      });
+      return label;
     };
 
     render() {
@@ -58,16 +85,16 @@ class FilteredEquipmentList extends React.Component {
       );
 
       const { classes } = this.props;
-      const names = getNames(this.props.data.domaines);
+      const domaines = getDomains(this.props.data.domaines);
 
       const equiList = this.state.name.length === 0
         ?
-        this.props.data.equipements.map((equipment, i) =>
-          <EquipmentCard key={i} equip={equipment} redirect={this.props.redirect}/>
+        this.props.data.equipements.slice(this.state.offset, this.state.limit).map((equipment) =>
+          <EquipmentCard key={equipment.__equipementID} equip={equipment} redirect={this.props.redirect}/>
         )
         :
-        filteredEquipments.map((equipment, i) =>
-          <EquipmentCard key={i} equip={equipment} redirect={this.props.redirect}/>
+        filteredEquipments.slice(this.state.offset, this.state.limit).map((equipment) =>
+          <EquipmentCard key={equipment.__equipementID} equip={equipment} redirect={this.props.redirect}/>
         );
 
       return (
@@ -82,21 +109,23 @@ class FilteredEquipmentList extends React.Component {
               renderValue={selected => (
                 <div className={classes.chips}>
                   {selected.map(value => (
-                    <Chip key={value} label={value} className={classes.chip} />
+                    <Chip key={value} label={this.getLabel(domaines,value)} className={classes.chip} />
                   ))}
                 </div>
               )}
               MenuProps={MenuProps}
             >
-              {names.map(name => (
-                <MenuItem key={name} value={name} style={getStyles(name, this)}>
-                  {name}
+              {domaines.map(domain => (
+                <MenuItem key={domain.info} value={domain.info} style={getStyles(domain.info, this)}>
+                  {domain.nom}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
           <div>
-            {equiList}
+            <Scrollbar onScroll={this.loadData} style={{ width: '90vw', height: '90vh' }}  ref={ e=> this.scrollBar = e }>
+              {equiList}
+            </Scrollbar>
           </div>
         </div>
       );

@@ -15,7 +15,15 @@ class EquipmentCard extends Component {
     photo: 'http://vyfhealth.com/wp-content/uploads/2015/10/yoga-placeholder1.jpg'
   };
 
-  componentDidMount(){
+  componentWillReceiveProps(){
+    if(this.props.equip.nomPhotoEquipement.length !== 0) {
+      storage.ref('photos/').child(this.props.equip.nomPhotoEquipement).getDownloadURL().then((url) => {
+        this.setState({photo: url});
+      }).catch(err => console.log(err));
+    }
+  }
+
+  componentWillMount() {
     if(this.props.equip.nomPhotoEquipement.length !== 0) {
       storage.ref('photos/').child(this.props.equip.nomPhotoEquipement).getDownloadURL().then((url) => {
         this.setState({photo: url});
